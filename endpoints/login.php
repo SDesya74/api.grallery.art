@@ -1,12 +1,12 @@
 <?php
 require_once "util/responses.php";
-require_once "util/json.php";
+require_once "util/Request.php";
 if (!isset($collector)) return;
 
 $collector->post(
     "/login",
     function() {
-        $json = get_posted_json();
+        $json = Request::json();
 
         // check fields
         if (empty($json["login"])) return error("Missing login field");
@@ -22,7 +22,7 @@ $collector->post(
 
         // protect login spamming
         if (time() - $user_bean->last_enter < 3) { // three seconds
-            return too_many_requests("Too many login requests, wait 3 seconds");
+            return too_many_requests("Too many logins, wait 3 seconds");
         }
         $user_bean->last_enter = time();
 
@@ -30,19 +30,23 @@ $collector->post(
         if (!password_verify($password, $user_bean->password_hash)) return error("Incorrect password");
 
         // create token pair
-        $tokens = generate_token_pair_for_username($user_bean->username);
+        require "variables/token.php";
+        if (!isset($access_secret) || !isset($refresh_secret)) return error("Secret tokens unavailable");
+
+        $access = (new Tokenizer($access_secret))->generateToken([ "username" => $user_bean->username ], "PT1H");
+        $refresh = (new Tokenizer($refresh_secret))->generateToken([ "username" => $user_bean->username ], "P1Y");
 
         // create session bean
-        $user_session_bean = R::dispense("session");
-        $user_session_bean->refresh_token = $tokens->refresh->token;
-        $user_session_bean->expires = $tokens->refresh->expires;
+        $session_bean = R::dispense("session");
+        $session_bean->refresh_token = $refresh->token;
+        $session_bean->expires = $refresh->expires;
 
         // save refresh token to database
-        $user_bean->ownSessionList[] = $user_session_bean;
+        $user_bean->ownSessionList[] = $session_bean;
 
         // save user in database
         R::store($user_bean);
 
-        return ok($tokens);
+        return ok([ "access" => $access, "refresh" => $refresh ]);
     }
 );

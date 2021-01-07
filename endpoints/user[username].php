@@ -1,48 +1,34 @@
 <?php
-require_once "util/responses.php";
-require_once "util/json.php";
+require_once "util/Request.php";
+
 if (!isset($collector)) return;
 
-$collector->post(
-    "/user/{username:[0-9]+}",
-    function() {
-        $json = get_posted_json();
+$collector->get(
+    "/user/{username:[a-zA-Z0-9-_]{2,30}}",
+    function($username) {
+        $fields = Request::fields("user");
 
-        // check fields
-        if (empty($json["login"])) return error("Missing login field");
-        if (empty($json["password"])) return error("Missing password field");
-
-        // login is username or email
-        $login = $json["login"];
-        $password = trim($json["password"]);
-
-        // find user
-        $user_bean = R::findOne("user", "username LIKE :login or email LIKE :login", [ ":login" => $login ]);
-        if ($user_bean == null) return error("User with this email or username is not registered");
-
-        // protect login spamming
-        if (time() - $user_bean->last_enter < 3) { // three seconds
-            return too_many_requests("Too many login requests, wait 3 seconds");
+        $user_bean = R::findOne("user", "username LIKE :username", [ ":username" => $username ]);
+        if ($user_bean === null) {
+            return error("User not found");
         }
-        $user_bean->last_enter = time();
 
-        // verify password
-        if (!password_verify($password, $user_bean->password_hash)) return error("Incorrect password");
-
-        // create token pair
-        $tokens = generate_token_pair_for_username($user_bean->username);
-
-        // create session bean
-        $user_session_bean = R::dispense("session");
-        $user_session_bean->refresh_token = $tokens->refresh->token;
-        $user_session_bean->expires = $tokens->refresh->expires;
-
-        // save refresh token to database
-        $user_bean->ownSessionList[] = $user_session_bean;
-
-        // save user in database
-        R::store($user_bean);
-
-        return ok($tokens);
+        $disallowed = [ "password_hash", "created_at", "nickname" ];
+        if (count($fields) > 0) {
+            $filtered = array_filter(
+                $user_bean->jsonSerialize(),
+                function($key) use ($disallowed, $fields) {
+                    return !in_array($key, $disallowed) && in_array($key, $fields);
+                }, ARRAY_FILTER_USE_KEY
+            );
+        } else {
+            $filtered = array_filter(
+                $user_bean->jsonSerialize(),
+                function($key) use ($disallowed) {
+                    return !in_array($key, $disallowed);
+                }, ARRAY_FILTER_USE_KEY
+            );
+        }
+        return ok($filtered);
     }
 );

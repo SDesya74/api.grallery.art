@@ -1,24 +1,27 @@
 <?php
 require_once "util/responses.php";
-require_once "util/json.php";
-require_once "util/token.php";
+require_once "util/Tokenizer.php";
+require_once "util/Request.php";
 if (!isset($collector)) return;
 
 $collector->post(
     "/register",
     function() {
-        $json = get_posted_json();
+        $json = Request::json();
 
         // check fields
-        if (empty($json["username"])) return error("Missing username field");
-        if (empty($json["email"])) return error("Missing email field");
-        if (empty($json["password"])) return error("Missing password field");
+        if (empty($json->username)) return error("Missing username field");
+        if (empty($json->email)) return error("Missing email field");
+        if (empty($json->password)) return error("Missing password field");
 
-        $username = $json["username"];
-        $email = $json["email"];
-        $password = trim($json["password"]);
+        // nickname is optional field for now
 
-        // validate login
+        $username = $json->username;
+        $nickname = isset($json->nickname) ? $json->nickname : $username;
+        $email = $json->email;
+        $password = trim($json->password);
+
+        // validate username
         if (!preg_match("/^[a-zA-Z0-9-_]{2,30}$/", $username)) {
             return error("Username must be between 2 and 30 characters long, contain only English letters, hyphens and underscores");
         }
@@ -53,25 +56,31 @@ $collector->post(
         // add user to database
         $user_bean = R::dispense("user");
         $user_bean->username = $username;
+        $user_bean->nickname = $nickname;
         $user_bean->email = $email;
         $user_bean->password_hash = $password_hash;
-        $user_bean->last_enter = time();
+        $user_bean->last_enter = (int) time();
+        $user_bean->created_at = (int) time();
+
 
         // create token pair
-        $tokens = generate_token_pair_for_username($username);
+        require "variables/token.php";
+        if (!isset($access_secret) || !isset($refresh_secret)) return error("Secret tokens unavailable");
+
+        $access = (new Tokenizer($access_secret))->generateToken([ "username" => $user_bean->username ], "PT1H");
+        $refresh = (new Tokenizer($refresh_secret))->generateToken([ "username" => $user_bean->username ], "P1Y");
 
         // create session bean
-        $user_session_bean = R::dispense("session");
-        $user_session_bean->refresh_token = $tokens->refresh->token;
-        $user_session_bean->expires = $tokens->refresh->expires;
+        $session_bean = R::dispense("session");
+        $session_bean->refresh_token = $refresh->token;
+        $session_bean->expires = $refresh->expires;
 
         // save refresh token to database
-        $user_bean->ownSessionList[] = $user_session_bean;
+        $user_bean->ownSessionList[] = $session_bean;
 
         // save user in database
         R::store($user_bean);
 
-        // send result
-        return ok($tokens);
+        return ok([ "access" => $access, "refresh" => $refresh ]);
     }
 );
