@@ -3,10 +3,9 @@
 error_reporting(E_ALL);
 
 require_once "vendor/autoload.php";
-
 require_once "lib/rb.php";
-
 require_once "variables/db.php";
+
 if (isset($db_host) && isset($db_user) && isset($db_pass)) {
     R::setup($db_host, $db_user, $db_pass);
 }
@@ -32,13 +31,13 @@ try {
         parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH)
     );
     send_response($response);
-} catch (Phroute\Exception\HttpRouteNotFoundException $exception) {
-    send_response(
-        response(400, [ "message" => "Invalid endpoint" ])
-    );
 } catch (Phroute\Exception\HttpMethodNotAllowedException $exception) {
     send_response(
         response(405, [ "message" => "Method not allowed" ])
+    );
+} catch (Phroute\Exception\HttpRouteNotFoundException $exception) {
+    send_response(
+        response(400, [ "message" => "Invalid endpoint" ])
     );
 } catch (Phroute\Exception\BadRouteException $exception) {
     send_response(

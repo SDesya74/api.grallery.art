@@ -31,7 +31,6 @@ function too_many_requests($message = "Too Many Requests") {
     return response(429, [ "message" => $message ]);
 }
 
-
 function response($code, $data) {
     $status = $code < 400 ? "ok" : "error";
     return [ $code, json_encode([ "status" => $status, "payload" => $data ]) ];
