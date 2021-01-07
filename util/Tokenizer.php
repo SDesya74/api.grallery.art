@@ -8,14 +8,14 @@ class Tokenizer {
     }
 
     public function generateToken($payload, $ttl): ArrayObject {  /* ttl - time to live */
-        $expires = (new DateTime())->add(new DateInterval($ttl))->getTimestamp();
+        $expires = ((new DateTime())->add(new DateInterval($ttl)))->getTimestamp();
 
         // add exp property to payload for JWT validation
-        $data = new ArrayObject($payload);
-        $data->exp = $expires;
+        $payload["exp"] = $expires;
+        $payload["time"] = microtime();
 
         // encoding to base64 just to look prettier
-        $token = JWT::urlsafeB64Encode(JWT::encode($data, $this->secret));
+        $token = JWT::urlsafeB64Encode(JWT::encode($payload, $this->secret));
 
         return new ArrayObject([ "token" => $token, "expires" => $expires ], ArrayObject::ARRAY_AS_PROPS);
     }
@@ -30,6 +30,6 @@ class Tokenizer {
     }
 
     public function decodeTokenPayload($token) {
-        return (JWT::decode(JWT::urlsafeB64Decode($token), $this->secret));
+        return JWT::decode(JWT::urlsafeB64Decode($token), $this->secret);
     }
 }
