@@ -11,12 +11,12 @@
 // 405 - method not allowed
 // 429 - too many requests
 
-function ok($data = null) {
-    return response($data == null ? 204 : 200, $data);
+function ok($payload = null, $meta = []) {
+    return response($payload == null ? 204 : 200, $payload, $meta);
 }
 
-function created($data) {
-    return response(201, $data);
+function created($message = "Created") {
+    return response(201, [ "message" => $message ]);
 }
 
 function error($message = "Internal error") {
@@ -31,7 +31,8 @@ function too_many_requests($message = "Too Many Requests") {
     return response(429, [ "message" => $message ]);
 }
 
-function response($code, $data) {
+function response($code, $data, $meta = []) {
     $status = $code < 400 ? "ok" : "error";
-    return [ $code, json_encode([ "status" => $status, "payload" => $data ]) ];
+    $response = array_merge([ "status" => $status, "payload" => $data ], $meta);
+    return [ $code, json_encode($response) ];
 }
