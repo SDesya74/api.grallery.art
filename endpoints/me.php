@@ -22,7 +22,7 @@ $collector->get(
         $user_bean->created = (int) $user_bean->created;
         $user_bean->last_enter = (int) $user_bean->last_enter;
         unset($user_bean->password_hash);
-        
+
         return ok($user_bean);
     }
 );
