@@ -9,9 +9,7 @@ $collector->get(
         $fields = Request::fields("user");
 
         $user_bean = R::findOne("user", "username LIKE :username", [ ":username" => $username ]);
-        if ($user_bean === null) {
-            return error("User not found");
-        }
+        if ($user_bean === null) return error("User not found");
 
         $disallowed = [ "password_hash", "created_at", "nickname" ];
         if (count($fields) > 0) {
@@ -29,6 +27,8 @@ $collector->get(
                 }, ARRAY_FILTER_USE_KEY
             );
         }
-        return ok($filtered);
+        return ok($filtered, [ "links" => [
+            "posts" => "/user/$username/posts"
+        ]]);
     }
 );
