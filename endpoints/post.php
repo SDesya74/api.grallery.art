@@ -42,4 +42,3 @@ $collector->post(
     }
 );
 
-
