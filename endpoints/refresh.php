@@ -29,6 +29,7 @@ $collector->post(
         if (!isset($access_secret) || !isset($refresh_secret)) return error("Secret tokens unavailable");
 
         $user_bean = $session_bean->user;
+        $user_bean->last_enter = time();
         $access = (new Tokenizer($access_secret))->generateToken([ "username" => $user_bean->username ], "PT1H");
         $refresh = (new Tokenizer($refresh_secret))->generateToken([ "username" => $user_bean->username ], "P1Y");
 
@@ -37,6 +38,7 @@ $collector->post(
         $session_bean->expires = $refresh->expires;
 
         // save user in database
+        R::store($user_bean);
         R::store($session_bean);
 
         return ok([ "access" => $access, "refresh" => $refresh ]);
