@@ -4,7 +4,14 @@ class Request {
     private static $parsed_args;
 
     static function json() {
-        return new ArrayObject(json_decode(file_get_contents("php://input")), ArrayObject::ARRAY_AS_PROPS);
+        try {
+            return new ArrayObject(
+                json_decode(file_get_contents("php://input")),
+                ArrayObject::ARRAY_AS_PROPS
+            );
+        } catch (Exception $ex) {
+            return null;
+        }
     }
 
     static function fields($name = null) {
@@ -29,8 +36,8 @@ class Request {
 
     static function page() {
         $args = self::args();
-        if (empty($args->page)) return null;
-        return $args->page;
+        $page = isset($args->page) ? $args->page : [ "limit" => 25, "offset" => 0 ];
+        return new ArrayObject($page, ArrayObject::ARRAY_AS_PROPS);
     }
 
     static function accessToken() {
