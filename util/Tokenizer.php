@@ -32,4 +32,21 @@ class Tokenizer {
     public function decodeTokenPayload($token) {
         return JWT::decode(JWT::urlsafeB64Decode($token), $this->secret);
     }
+
+    public function decodeToken($token) {
+        try {
+            $payload = JWT::decode(JWT::urlsafeB64Decode($token), $this->secret);
+            $valid = true;
+        } catch (Exception $ex) {
+            $payload = null;
+            $valid = false;
+        } finally {
+            return new ArrayObject(
+                [
+                    "valid" => $valid,
+                    "payload" => $payload
+                ], ArrayObject::ARRAY_AS_PROPS
+            );
+        }
+    }
 }
