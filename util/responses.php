@@ -12,11 +12,11 @@
 // 429 - too many requests
 
 function ok($payload = null, $meta = []) {
-    return response($payload == null ? 204 : 200, $payload, $meta);
+    return response($payload == null && $meta == [] ? 204 : 200, $payload, $meta);
 }
 
-function created($message = "Created") {
-    return response(201, [ "message" => $message ]);
+function created($message = "Created", $meta = []) {
+    return response(201, [ "message" => $message ], $meta);
 }
 
 function error($message = "Internal error") {
