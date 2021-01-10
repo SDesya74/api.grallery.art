@@ -60,7 +60,7 @@ $collector->post(
         $user_bean->email = $email;
         $user_bean->password_hash = $password_hash;
         $user_bean->last_enter = (int) time();
-        $user_bean->created_at = (int) time();
+        $user_bean->created = (int) time();
 
 
         // create token pair
