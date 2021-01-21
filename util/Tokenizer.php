@@ -12,7 +12,6 @@ class Tokenizer {
 
         // add exp property to payload for JWT validation
         $payload["exp"] = $expires;
-        $payload["time"] = microtime();
 
         // encoding to base64 just to look prettier
         $token = JWT::urlsafeB64Encode(JWT::encode($payload, $this->secret));
@@ -20,20 +19,7 @@ class Tokenizer {
         return new ArrayObject([ "token" => $token, "expires" => $expires ], ArrayObject::ARRAY_AS_PROPS);
     }
 
-    public function isTokenValid($token) {
-        try {
-            // JWT::decode throws exception on invalid tokens
-            return self::decodeTokenPayload($token) !== null;
-        } catch (Exception $exception) {
-            return false;
-        }
-    }
-
-    public function decodeTokenPayload($token) {
-        return JWT::decode(JWT::urlsafeB64Decode($token), $this->secret);
-    }
-
-    public function decodeToken($token) {
+    public function decodeToken($token): ArrayObject {
         try {
             $payload = JWT::decode(JWT::urlsafeB64Decode($token), $this->secret);
             $valid = true;
@@ -45,8 +31,8 @@ class Tokenizer {
                 [
                     "valid" => $valid,
                     "payload" => $payload
-                ], ArrayObject::ARRAY_AS_PROPS
-            );
+                ],
+                ArrayObject::ARRAY_AS_PROPS);
         }
     }
 }
