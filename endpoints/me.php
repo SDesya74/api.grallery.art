@@ -6,17 +6,12 @@ if (!isset($collector)) return;
 $collector->get(
     "/me",
     function() {
-        $token = Request::accessToken();
-        if ($token == null) return unauthorized("Access token not found");
+        $tokenizer = new Tokenizer(ACCESS_SECRET);
+        [ "valid" => $valid, "payload" => $payload ] = $tokenizer->decodeToken(Request::accessToken());
+        if (!$valid) return unauthorized("Invalid token");
 
-        require "variables/token.php";
-        if (!isset($access_secret)) return error("Access token secret unavailable");
-
-        $token = (new Tokenizer($access_secret))->decodeToken($token);
-        if (!$token->valid) return unauthorized("Invalid token");
-
-        $user_bean = R::findOne("user", "username LIKE :username", [ ":username" => $token->payload->username ]);
-        if ($user_bean === null) return error("User not found (HOW?)");
+        $user_bean = R::findOne("user", "id = ?", [ $payload->id ]);
+        if ($user_bean == null) return error("User not found");
 
         $user_bean->id = (int) $user_bean->id;
         $user_bean->created = (int) $user_bean->created;

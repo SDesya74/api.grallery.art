@@ -1,20 +1,16 @@
 <?php
 require_once "util/responses.php";
 require_once "util/Request.php";
+
 if (!isset($collector)) return;
 
 $collector->post(
     "/login",
     function() {
-        $json = Request::json();
+        $json = Request::getJsonFields("login", "password");
+        if (!$json->valid) return error($json->errors);
 
-        // check fields
-        if (empty($json["login"])) return error("Missing login field");
-        if (empty($json["password"])) return error("Missing password field");
-
-        // login is username or email
-        $login = $json["login"];
-        $password = trim($json["password"]);
+        [ "login" => $login, "password" => $password ] = $json->payload;
 
         // find user
         $user_bean = R::findOne("user", "username LIKE :login or email LIKE :login", [ ":login" => $login ]);
@@ -29,17 +25,20 @@ $collector->post(
         // verify password
         if (!password_verify($password, $user_bean->password_hash)) return error("Incorrect password");
 
-        // create token pair
-        require "variables/token.php";
-        if (!isset($access_secret) || !isset($refresh_secret)) return error("Secret tokens unavailable");
+        $access = (new Tokenizer(ACCESS_SECRET))
+            ->generateToken([ "id" => $user_bean->id ], ACCESS_TOKEN_LIFETIME);
+        $refresh = (new Tokenizer(REFRESH_SECRET))
+            ->generateToken([], REFRESH_TOKEN_LIFETIME);
 
-        $access = (new Tokenizer($access_secret))->generateToken([ "username" => $user_bean->username ], "PT1H");
-        $refresh = (new Tokenizer($refresh_secret))->generateToken([ "username" => $user_bean->username ], "P1Y");
+        $user_agent = Request::header("User-Agent");
 
-        // create session bean
-        $session_bean = R::dispense("session");
+        // find or create session
+        $session_bean = R::findOne("session", "user_id = ? AND user_agent = ?", [ $user_bean->id, $user_agent ]);
+        if ($session_bean == null) $session_bean = R::dispense("session");
+
         $session_bean->refresh_token = $refresh->token;
         $session_bean->expires = $refresh->expires;
+        $session_bean->user_agent = Request::header("User-Agent");
 
         // save refresh token to database
         $user_bean->ownSessionList[] = $session_bean;
@@ -47,6 +46,9 @@ $collector->post(
         // save user in database
         R::store($user_bean);
 
-        return ok([ "access" => $access, "refresh" => $refresh ]);
+        return ok(
+            [ "access" => $access, "refresh" => $refresh ],
+            hateoas("user", "/user/$user_bean->username")
+        );
     }
 );

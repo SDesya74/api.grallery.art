@@ -7,7 +7,7 @@ if (!isset($collector)) return;
 $collector->get(
     "/post/{id:i}",
     function($id) {
-        $post_bean = R::findOne("post", "id = :id", [ ":id" => $id ]);
+        $post_bean = R::findOne("post", "id = ?", [ $id ]);
         if ($post_bean == null) return error("Post not found");
 
         $post_bean->content = json_decode($post_bean->content);

@@ -11,24 +11,18 @@ $collector->get(
         $user_bean = R::findOne("user", "username LIKE :username", [ ":username" => $username ]);
         if ($user_bean === null) return error("User not found");
 
-        $disallowed = [ "password_hash", "created_at", "nickname" ];
-        if (count($fields) > 0) {
-            $filtered = array_filter(
+        unset($user_bean->password_hash);
+
+        if (!empty($fields)) {
+            $result = array_filter(
                 $user_bean->jsonSerialize(),
-                function($key) use ($disallowed, $fields) {
-                    return !in_array($key, $disallowed) && in_array($key, $fields);
-                }, ARRAY_FILTER_USE_KEY
+                function($key) use ($fields) {
+                    return in_array($key, $fields);
+                },
+                ARRAY_FILTER_USE_KEY
             );
-        } else {
-            $filtered = array_filter(
-                $user_bean->jsonSerialize(),
-                function($key) use ($disallowed) {
-                    return !in_array($key, $disallowed);
-                }, ARRAY_FILTER_USE_KEY
-            );
-        }
-        return ok($filtered, [ "links" => [
-            "posts" => "/user/$username/posts"
-        ]]);
+        }else $result = $user_bean;
+
+        return ok($result, hateoas("posts","/user/$username/posts"));
     }
 );
