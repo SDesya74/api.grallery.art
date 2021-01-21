@@ -3,6 +3,31 @@
 class Request {
     private static $parsed_args;
 
+    static function getJsonFields(...$fields) {
+        $json = self::json();
+
+        if ($json == null) {
+            return new ArrayObject(
+                [ "valid" => false, "errors" => [ "Invalid JSON" ] ],
+                ArrayObject::ARRAY_AS_PROPS
+            );
+        }
+
+        $errors = [];
+        $payload = new ArrayObject();
+        foreach ($fields as $field) {
+            if (isset($json[$field])) {
+                $payload[$field] = $json[$field];
+                continue;
+            }
+            $errors[$field] = "Missing field";
+        }
+
+        if (count($errors) > 0) $result = [ "valid" => false, "errors" => $errors ];
+        else $result = [ "valid" => true, "payload" => $payload ];
+        return new ArrayObject($result, ArrayObject::ARRAY_AS_PROPS);
+    }
+
     static function json() {
         try {
             return new ArrayObject(
