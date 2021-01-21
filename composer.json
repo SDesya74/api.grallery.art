@@ -13,6 +13,8 @@
     "phroute/phroute": "v1.4.4",
     "firebase/php-jwt": "v5.2.0",
     "ext-json": "*",
-    "ext-apache": "*"
+    "ext-apache": "*",
+    "ext-zlib": "*",
+    "ext-curl": "*"
   }
 }
