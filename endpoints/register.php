@@ -2,24 +2,28 @@
 require_once "util/responses.php";
 require_once "util/Tokenizer.php";
 require_once "util/Request.php";
+
 if (!isset($collector)) return;
 
 $collector->post(
     "/register",
     function() {
-        $json = Request::json();
+        $json = Request::getJsonFields("username", "email", "password", "captcha");
+        if (!$json->valid) return error($json->errors);
 
-        // check fields
-        if (empty($json->username)) return error("Missing username field");
-        if (empty($json->email)) return error("Missing email field");
-        if (empty($json->password)) return error("Missing password field");
+        $payload = $json->payload;
+        [ "username" => $username, "email" => $email, "password" => $password, "captcha" => $captcha ] = $payload;
+
+        // validate captcha
+        $secret = CAPTCHA_SECRET;
+        $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$secret&response=$captcha");
+        if ($response === false) return error("Can't check CAPTCHA");
+
+        $response = json_decode($response, true);
+        if (!$response["success"]) return forbidden("You are a robot");
 
         // nickname is optional field for now
-
-        $username = $json->username;
-        $nickname = isset($json->nickname) ? $json->nickname : $username;
-        $email = $json->email;
-        $password = trim($json->password);
+        $nickname = isset($payload->nickname) ? $payload->nickname : $username;
 
         // validate username
         if (!preg_match("/^[a-zA-Z0-9-_]{2,30}$/", $username)) {
@@ -27,9 +31,7 @@ $collector->post(
         }
 
         // validate email
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return error("Invalid email");
-        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return error("Invalid email");
 
         // validate password
         if (
@@ -38,15 +40,15 @@ $collector->post(
             ctype_lower($password) ||
             !preg_match("/\d/", $password)
         ) {
-            return error("Password must be at least 6 characters long, must contain at least one uppercase character, one lowercase character and one number");
+            return error(
+                "Password must be at least 6 characters long, " .
+                "must contain at least one uppercase character, " .
+                "one lowercase character and one number"
+            );
         }
 
         // if login is registered - throw error
-        if (R::findOne(
-                "user",
-                "username LIKE :username or email LIKE :email",
-                [ ":username" => $username, ":email" => $email ]
-            ) != null) {
+        if (R::findOne("user", "username LIKE ? or email LIKE ?", [ $username, $email ]) != null) {
             return error("User with this username or email is already registered");
         }
 
@@ -62,18 +64,18 @@ $collector->post(
         $user_bean->last_enter = (int) time();
         $user_bean->created = (int) time();
 
+        $access_tokenizer = new Tokenizer(ACCESS_SECRET);
+        $refresh_tokenizer = new Tokenizer(REFRESH_SECRET);
 
         // create token pair
-        require "variables/token.php";
-        if (!isset($access_secret) || !isset($refresh_secret)) return error("Secret tokens unavailable");
-
-        $access = (new Tokenizer($access_secret))->generateToken([ "username" => $user_bean->username ], "PT1H");
-        $refresh = (new Tokenizer($refresh_secret))->generateToken([ "username" => $user_bean->username ], "P1Y");
+        $access = $access_tokenizer->generateToken([ "id" => $user_bean->id ], ACCESS_TOKEN_LIFETIME);
+        $refresh = $refresh_tokenizer->generateToken([], REFRESH_TOKEN_LIFETIME);
 
         // create session bean
         $session_bean = R::dispense("session");
         $session_bean->refresh_token = $refresh->token;
         $session_bean->expires = $refresh->expires;
+        $session_bean->user_agent = Request::header("User-Agent");
 
         // save refresh token to database
         $user_bean->ownSessionList[] = $session_bean;
@@ -81,6 +83,6 @@ $collector->post(
         // save user in database
         R::store($user_bean);
 
-        return ok([ "access" => $access, "refresh" => $refresh ]);
+        return ok([ "access" => $access, "refresh" => $refresh ], hateoas("user", "/user/$username"));
     }
 );
