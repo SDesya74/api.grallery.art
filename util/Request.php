@@ -3,7 +3,7 @@
 class Request {
     private static $parsed_args;
 
-    static function getJsonFields(...$fields) {
+    static function getJsonFields(...$fields): ArrayObject {
         $json = self::json();
 
         if ($json == null) {
@@ -28,7 +28,7 @@ class Request {
         return new ArrayObject($result, ArrayObject::ARRAY_AS_PROPS);
     }
 
-    static function json() {
+    static function json(): ?ArrayObject {
         try {
             return new ArrayObject(
                 json_decode(file_get_contents("php://input")),
@@ -50,7 +50,7 @@ class Request {
         return explode(",", $fields[$name]);
     }
 
-    static function args() {
+    static function args(): ArrayObject {
         if (self::$parsed_args !== null) return self::$parsed_args;
 
         parse_str(parse_url($_SERVER["REQUEST_URI"], PHP_URL_QUERY), self::$parsed_args);
@@ -59,12 +59,12 @@ class Request {
         return self::$parsed_args;
     }
 
-    static function page() {
+    static function page(): array {
         $args = self::args();
         return isset($args->page) ? [ $args->page->limit, $args->page->offset ] : [ 25, 0 ];
     }
 
-    static function accessToken() {
+    static function accessToken(): ?string {
         if (isset(self::args()->access_token)) return self::args()->access_token;
 
         $token = self::header("Authorization");
