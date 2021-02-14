@@ -23,32 +23,13 @@ $collector->post(
         $user_bean->last_enter = time();
 
         // verify password
-        if (!password_verify($password, $user_bean->password_hash)) return error("Incorrect password");
+        if (!$user_bean->verifyPassword($password)) return error("Incorrect password");
 
-        $access = (new Tokenizer(ACCESS_SECRET))
-            ->generateToken([ "id" => $user_bean->id ], ACCESS_TOKEN_LIFETIME);
-        $refresh = (new Tokenizer(REFRESH_SECRET))
-            ->generateToken([], REFRESH_TOKEN_LIFETIME);
-
-        $user_agent = Request::header("User-Agent");
-
-        // find or create session
-        $session_bean = R::findOne("session", "user_id = ? AND user_agent = ?", [ $user_bean->id, $user_agent ]);
-        if ($session_bean == null) $session_bean = R::dispense("session");
-
-        $session_bean->refresh_token = $refresh->token;
-        $session_bean->expires = $refresh->expires;
-        $session_bean->user_agent = Request::header("User-Agent");
-
-        // save refresh token to database
-        $user_bean->ownSessionList[] = $session_bean;
+        $session = $user_bean->createSession();
 
         // save user in database
         R::store($user_bean);
 
-        return ok(
-            [ "access" => $access, "refresh" => $refresh ],
-            hateoas("user", "/user/$user_bean->username")
-        );
+        return ok($session, hateoas("user", "/user/$user_bean->username"));
     }
 );
