@@ -10,7 +10,7 @@ $collector->get(
         $user_bean = R::findOne("user", "username LIKE :username", [ ":username" => $username ]);
         if ($user_bean === null) return error("User not found");
 
-        [ "limit" => $limit, "offset" => $offset ] = Request::page();
+        [ $limit, $offset ] = Request::page();
 
         $total = $user_bean->countOwn("post");
         $post_beans = R::findAll("post", "WHERE user_id = ? LIMIT ?, ?", [ $user_bean->id, $offset, $limit ]);

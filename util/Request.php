@@ -61,8 +61,7 @@ class Request {
 
     static function page() {
         $args = self::args();
-        $page = isset($args->page) ? $args->page : [ "limit" => 25, "offset" => 0 ];
-        return new ArrayObject($page, ArrayObject::ARRAY_AS_PROPS);
+        return isset($args->page) ? [ $args->page->limit, $args->page->offset ] : [ 25, 0 ];
     }
 
     static function accessToken() {

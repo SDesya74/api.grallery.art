@@ -14,14 +14,11 @@ $collector->get(
         $user_bean = R::findOne("user", "id = ?", [ $payload->id ]);
         if ($user_bean === null) return error("User not found");
 
-        [ "limit" => $limit, "offset" => $offset ] = Request::page();
+        [ $limit, $offset ] = Request::page();
 
         $total = R::count("session");
         $posts = R::findAll("session", "LIMIT ?, ?", [ $offset, $limit ]);
 
-        $meta = [];
-        $meta[] = pagination($limit, $offset, $total);
-
-        return ok($posts, $meta);
+        return ok($posts, pagination($limit, $offset, $total));
     }
 );
