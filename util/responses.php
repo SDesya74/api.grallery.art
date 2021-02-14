@@ -11,31 +11,31 @@
 // 405 - method not allowed
 // 429 - too many requests
 
-function ok($payload = null, $meta = []) {
-    return response($payload == null && $meta == [] ? 204 : 200, $payload, $meta);
+function ok($payload = null, $meta = []): array {
+    return response($payload === null && $meta == [] ? 204 : 200, $payload, $meta);
 }
 
-function created($message = "Created", $meta = []) {
+function created($message = "Created", $meta = []): array {
     return response(201, [ "message" => $message ], $meta);
 }
 
-function error(/*$code, */ $message/*, $description*/) {
+function error(/*$code, */ $message/*, $description*/): array {
     return response(400, [ /* "code" => $code, */ "message" => $message /*, "description" => $description */ ]);
 }
 
-function unauthorized($message = "Unauthorized") {
+function unauthorized($message = "Unauthorized"): array {
     return response(401, [ "message" => $message ]);
 }
 
-function forbidden($message = "Forbidden") {
+function forbidden($message = "Forbidden"): array {
     return response(403, [ "message" => $message ]);
 }
 
-function too_many_requests($message = "Too Many Requests") {
+function too_many_requests($message = "Too Many Requests"): array {
     return response(429, [ "message" => $message ]);
 }
 
-function hateoas($name, $link, $params = []) {
+function hateoas($name, $link, $params = []): array {
     $params = empty($params) ? [] : [ "query" => http_build_query($params) ];
     return [
         "type" => "link",
@@ -50,7 +50,7 @@ function hateoas($name, $link, $params = []) {
     ];
 }
 
-function pagination($limit, $offset, $total) {
+function pagination($limit, $offset, $total): array {
     $links = [];
 
     if ($offset + $limit < $total) $links[] = hateoas(
