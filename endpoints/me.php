@@ -7,10 +7,10 @@ $collector->get(
     "/me",
     function() {
         $tokenizer = new Tokenizer(ACCESS_SECRET);
-        [ "valid" => $valid, "payload" => $payload ] = $tokenizer->decodeToken(Request::accessToken());
-        if (!$valid) return unauthorized("Invalid token");
+        $token = $tokenizer->decodeToken(Request::accessToken());
+        if (!$token->valid) return unauthorized($token->error);
 
-        $user_bean = R::findOne("user", "id = ?", [ $payload->id ]);
+        $user_bean = R::findOne("user", "id = ?", [ $token->payload->id ]);
         if ($user_bean == null) return error("User not found");
 
         $fields = Request::fields("user");
