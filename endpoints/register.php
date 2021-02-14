@@ -23,7 +23,7 @@ $collector->post(
         if (!$response["success"]) return forbidden("You are a robot");
 
         // nickname is optional field for now
-        $nickname = isset($payload->nickname) ? $payload->nickname : $username;
+        // $nickname = isset($payload->nickname) ? $payload->nickname : $username;
 
         // validate username
         if (!preg_match("/^[a-zA-Z0-9-_]{2,30}$/", $username)) {
@@ -52,37 +52,18 @@ $collector->post(
             return error("User with this username or email is already registered");
         }
 
-        // encode password
-        $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
         // add user to database
         $user_bean = R::dispense("user");
-        $user_bean->username = $username;
-        $user_bean->nickname = $nickname;
-        $user_bean->email = $email;
-        $user_bean->password_hash = $password_hash;
-        $user_bean->last_enter = (int) time();
-        $user_bean->created = (int) time();
+        $user_bean->register($username, $email, $password);
 
-        $access_tokenizer = new Tokenizer(ACCESS_SECRET);
-        $refresh_tokenizer = new Tokenizer(REFRESH_SECRET);
+        R::store($user_bean); // invalidate ID
 
-        // create token pair
-        $access = $access_tokenizer->generateToken([ "id" => $user_bean->id ], ACCESS_TOKEN_LIFETIME);
-        $refresh = $refresh_tokenizer->generateToken([], REFRESH_TOKEN_LIFETIME);
-
-        // create session bean
-        $session_bean = R::dispense("session");
-        $session_bean->refresh_token = $refresh->token;
-        $session_bean->expires = $refresh->expires;
-        $session_bean->user_agent = Request::header("User-Agent");
-
-        // save refresh token to database
-        $user_bean->ownSessionList[] = $session_bean;
+        $session = $user_bean->createSession();
 
         // save user in database
         R::store($user_bean);
 
-        return ok([ "access" => $access, "refresh" => $refresh ], hateoas("user", "/user/$username"));
+        return ok($session, hateoas("user", "/user/$username"));
     }
 );
