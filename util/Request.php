@@ -14,7 +14,7 @@ class Request {
         }
 
         $errors = [];
-        $payload = new ArrayObject();
+        $payload = new ArrayObject([], ArrayObject::ARRAY_AS_PROPS);
         foreach ($fields as $field) {
             if (isset($json[$field])) {
                 $payload[$field] = $json[$field];
