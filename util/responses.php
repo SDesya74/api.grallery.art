@@ -67,8 +67,8 @@ function pagination($limit, $offset, $total) {
     return $links;
 }
 
-function response($code, $data, $meta = []) {
-    $status = $code < 400 ? "ok" : "error";
+function response($code, $data, $meta = []): array {
+    $ok = $code >= 200 && $code < 300;
 
     $meta = [ $meta ];
     while (!empty($meta) && array_filter($meta,
@@ -78,7 +78,6 @@ function response($code, $data, $meta = []) {
         $meta = array_merge(...$meta);
     }
 
-
     $meta_response = [];
     foreach ($meta as $item) {
         if ($item["type"] == "link") {
@@ -86,7 +85,8 @@ function response($code, $data, $meta = []) {
             $meta_response["links"][$item["name"]] = $item["link"];
         }
     }
-    $response = [ "status" => $status, "payload" => $data ];
+
+    $response = [ "ok" => $ok, "payload" => $data ];
     if (!empty($meta_response)) $response["meta"] = $meta_response;
     return [ $code, json_encode($response) ];
 }
