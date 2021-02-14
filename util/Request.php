@@ -41,13 +41,13 @@ class Request {
 
     static function fields($name = null) {
         $args = self::args();
-        if (empty($args->fields)) return null;
+        if (empty($args->fields)) return [];
 
         $fields = $args->fields;
         if ($name == null) return $fields;
 
-        if (empty($fields[$name])) return null;
-        return explode(",", $fields[$name]);
+        if (empty($fields[$name])) return [];
+        return explode(",", $fields[$name]) ?? [];
     }
 
     static function args(): ArrayObject {
