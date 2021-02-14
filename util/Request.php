@@ -74,8 +74,8 @@ class Request {
     }
 
     static function header($name) {
-        $headers = getallheaders();
-        return isset($headers[$name]) ? $headers[$name] : null;
+        $name = str_replace("-", "_", strtoupper($name));
+        return empty($_SERVER["HTTP_$name"]) ? null : $_SERVER["HTTP_$name"];
     }
 }
 
