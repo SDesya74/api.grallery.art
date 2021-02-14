@@ -1,4 +1,8 @@
 <?php
+
+use RedBeanPHP\OODB;
+use RedBeanPHP\ToolBox;
+
 error_reporting(E_ALL);
 
 require_once "vendor/autoload.php";
@@ -22,16 +26,37 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 // region Connect to database with RedBean
 require_once "lib/rb.php";
 require_once "variables/db.php";
+require_once "util/UUID.php";
 
 if (isset($db_host) && isset($db_user) && isset($db_pass)) {
     R::setup($db_host, $db_user, $db_pass);
+
+    $oldToolBox = R::getToolBox();
+    $oldAdapter = $oldToolBox->getDatabaseAdapter();
+    $uuidWriter = new UUIDWriterMySQL($oldAdapter);
+    $newRedBean = new OODB($uuidWriter);
+    $newToolBox = new ToolBox($newRedBean, $oldAdapter, $uuidWriter);
+    R::configureFacadeWithToolbox($newToolBox);
+}
+// endregion
+
+// region Get all models
+$it = new RecursiveDirectoryIterator("models/");
+foreach (new RecursiveIteratorIterator($it) as $endpoint) {
+    if ($endpoint->getExtension() == "php") {
+        include_once $endpoint;
+    }
 }
 // endregion
 
 // region Get all routes
 $collector = new Phroute\RouteCollector();
-foreach (glob("endpoints/**/*.php") as $endpoint) {
-    include_once $endpoint;
+
+$it = new RecursiveDirectoryIterator("endpoints/");
+foreach (new RecursiveIteratorIterator($it) as $endpoint) {
+    if ($endpoint->getExtension() == "php") {
+        include_once $endpoint;
+    }
 }
 // endregion
 
