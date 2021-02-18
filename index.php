@@ -83,11 +83,11 @@ try {
     );
 } catch (Phroute\Exception\HttpRouteNotFoundException $exception) {
     send_response(
-        response(400, [ "message" => "Invalid endpoint" ])
+        response(404, [ "message" => "Invalid endpoint" ])
     );
 } catch (Phroute\Exception\BadRouteException $exception) {
     send_response(
-        response(400, [ "message" => "Bad route" ])
+        response(500, [ "message" => "Bad route" ])
     );
 }
 // endregion
