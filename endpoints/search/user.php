@@ -20,10 +20,11 @@ $collector->get(
 
 
         $fields = Request::fields("user");
-        foreach ($users as &$bean) $bean = $bean->getFields($fields);
+        $result = [];
+        foreach ($users as $bean) $result[] = $bean->getFields($fields);
 
         return ok(
-            [ "users" => $users ],
+            [ "users" => $result ],
             pagination($limit, $offset, $total)
         );
     }
