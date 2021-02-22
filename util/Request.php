@@ -1,7 +1,7 @@
 <?php
 
 class Request {
-    private static $parsed_args;
+    private static ArrayObject $parsed_args;
 
     static function getJsonFields(...$fields): ArrayObject {
         $json = self::json();
@@ -28,18 +28,16 @@ class Request {
         return new ArrayObject($result, ArrayObject::ARRAY_AS_PROPS);
     }
 
-    static function json(): ?ArrayObject {
-        try {
-            return new ArrayObject(
-                json_decode(file_get_contents("php://input")),
-                ArrayObject::ARRAY_AS_PROPS
-            );
-        } catch (Exception $ex) {
-            return null;
-        }
+    static function json(): ArrayObject {
+        $input = file_get_contents("php://input");
+        return new ArrayObject(
+            $input ? json_decode($input) : [],
+            ArrayObject::ARRAY_AS_PROPS
+        );
+
     }
 
-    static function fields($name = null) {
+    static function fields($name = null): array {
         $args = self::args();
         if (empty($args->fields)) return [];
 
