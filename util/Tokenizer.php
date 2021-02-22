@@ -1,14 +1,12 @@
 <?php
 
+use JetBrains\PhpStorm\Pure;
+
 class Tokenizer {
-    private $secret;
+    private string $secret;
 
     public function __construct(string $secret) {
         $this->secret = $secret;
-    }
-
-    public static function verify($msg, $signature, $key): bool {
-        return $signature === hash_hmac("sha256", $msg, $key, true);
     }
 
     public function generateToken($payload, $ttl): ArrayObject {  /* ttl - time to live */
@@ -22,11 +20,11 @@ class Tokenizer {
         return new ArrayObject([ "token" => $token, "expires" => $expires ], ArrayObject::ARRAY_AS_PROPS);
     }
 
-    private static function safeBase64Encode($input) {
+    private static function safeBase64Encode(string $input): string {
         return str_replace("=", "", strtr(base64_encode($input), "+/", "-_"));
     }
 
-    public function decodeToken($token): ArrayObject {
+    public function decodeToken(string $token): ArrayObject {
         try {
             $segments = explode(".", $token);
             if (count($segments) != 2) {
@@ -34,36 +32,40 @@ class Tokenizer {
                 throw new UnexpectedValueException("Wrong number of segments ($count)");
             }
             [ $body, $sign ] = $segments;
-            if (null === $payload = json_decode(self::safeBase64Decode($body))) {
+            if (null === $payload = json_decode(Tokenizer::safeBase64Decode($body))) {
                 throw new UnexpectedValueException("Invalid segment encoding");
             }
-            if (self::safeBase64Decode($sign) !== hash_hmac("sha256", $body, $this->secret, true)) {
+            if (Tokenizer::safeBase64Decode($sign) !== hash_hmac("sha256", $body, $this->secret, true)) {
                 throw new UnexpectedValueException("Signature verification failed");
             }
             if (isset($payload->exp) && time() >= $payload->exp) {
                 throw new UnexpectedValueException("Expired Token");
             }
 
-            $valid = true;
-            return new ArrayObject([ "valid" => $valid, "payload" => $payload ], ArrayObject::ARRAY_AS_PROPS);
+            return new ArrayObject(
+                [
+                    "valid" => true,
+                    "payload" => $payload
+                ],
+                ArrayObject::ARRAY_AS_PROPS
+            );
         } catch (Exception $ex) {
-            $payload = null;
-            $valid = false;
-            $error = $ex->getMessage();
-            return new ArrayObject([
-                                       "valid" => $valid,
-                                       "payload" => $payload,
-                                       "error" => $error,
-                                   ],
-                                   ArrayObject::ARRAY_AS_PROPS);
+            return new ArrayObject(
+                [
+                    "valid" => false,
+                    "payload" => null,
+                    "error" => $ex->getMessage(),
+                ],
+                ArrayObject::ARRAY_AS_PROPS
+            );
         }
     }
 
-    private static function safeBase64Decode($input) {
+    #[Pure] private static function safeBase64Decode(string $input): string {
         $remainder = strlen($input) % 4;
         if ($remainder) {
-            $padlen = 4 - $remainder;
-            $input .= str_repeat("=", $padlen);
+            $padding = 4 - $remainder;
+            $input .= str_repeat("=", $padding);
         }
         return base64_decode(strtr($input, "-_", "+/"));
     }
