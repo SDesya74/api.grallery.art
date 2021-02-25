@@ -1,9 +1,14 @@
 <?php
 
-class Request {
-    private static ArrayObject $parsed_args;
+use JetBrains\PhpStorm\ArrayShape;
 
-    static function getJsonFields(...$fields): ArrayObject {
+class Request {
+    private static ?ArrayObject $parsed_args = null;
+
+    #[ArrayShape([ "valid" => "bool", "payload" => "\ArrayObject", "errors" => "array" ])]
+    static function getJsonFields(
+        ...$fields
+    ): ArrayObject {
         $json = self::json();
 
         if ($json == null) {
@@ -51,8 +56,9 @@ class Request {
     static function args(): ArrayObject {
         if (self::$parsed_args !== null) return self::$parsed_args;
 
-        parse_str(parse_url($_SERVER["REQUEST_URI"], PHP_URL_QUERY), self::$parsed_args);
-        self::$parsed_args = new ArrayObject(self::$parsed_args, ArrayObject::ARRAY_AS_PROPS);
+        $args = null;
+        parse_str(parse_url($_SERVER["REQUEST_URI"], PHP_URL_QUERY), $args);
+        self::$parsed_args = new ArrayObject($args, ArrayObject::ARRAY_AS_PROPS);
 
         return self::$parsed_args;
     }
@@ -60,15 +66,6 @@ class Request {
     static function page(): array {
         $args = self::args();
         return isset($args->page) ? [ $args->page->limit, $args->page->offset ] : [ 25, 0 ];
-    }
-
-    static function accessToken(): ?string {
-        if (isset(self::args()->access_token)) return self::args()->access_token;
-
-        $token = self::header("Authorization");
-        if ($token !== null) return explode(" ", $token)[1];
-
-        return null;
     }
 
     static function header($name) {
