@@ -10,6 +10,9 @@ require_once "vendor/autoload.php";
 require_once "variables/token.php";
 require_once "variables/captcha.php";
 
+require_once "util/tokens/AccessToken.php";
+require_once "util/tokens/RefreshToken.php";
+
 // region CORS
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Authorization, Content-Type");
@@ -26,6 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 // region Connect to database with RedBean
 require_once "lib/rb.php";
 require_once "variables/db.php";
+require_once "variables/uuid.php";
 require_once "util/UUID.php";
 
 if (isset($db_host) && isset($db_user) && isset($db_pass)) {
@@ -52,11 +56,16 @@ foreach (new RecursiveIteratorIterator($it) as $endpoint) {
 // region Get all routes
 $collector = new Phroute\RouteCollector();
 
+$it = new RecursiveDirectoryIterator("filters/");
+foreach (new RecursiveIteratorIterator($it) as $filter) {
+    if ($filter->getExtension() != "php") continue;
+    include_once $filter;
+}
+
 $it = new RecursiveDirectoryIterator("endpoints/");
 foreach (new RecursiveIteratorIterator($it) as $endpoint) {
-    if ($endpoint->getExtension() == "php") {
-        include_once $endpoint;
-    }
+    if ($endpoint->getExtension() != "php") continue;
+    include_once $endpoint;
 }
 // endregion
 
