@@ -3,17 +3,19 @@ require_once "util/Request.php";
 
 if (!isset($collector)) return;
 
+
 $collector->get(
     "/me",
     function() {
-        $tokenizer = new Tokenizer(ACCESS_SECRET);
-        $token = $tokenizer->decodeToken(Request::accessToken());
-        if (!$token->valid) return unauthorized($token->error);
+        $token = AccessToken::get();
 
-        $user_bean = R::findOne("user", "id = ?", [ $token->payload->id ]);
+        $user_bean = Model_User::byID($token->getUserID());
         if ($user_bean == null) return error("User not found");
 
+        $username = $user_bean->username;
+
         $fields = Request::fields("user");
-        return ok($user_bean->getFields($fields));
-    }
+        return ok($user_bean->getFields($fields), hateoas("posts", "user/$username/posts"));
+    },
+    [ "before" => "auth" ]
 );

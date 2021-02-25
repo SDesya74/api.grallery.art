@@ -13,11 +13,8 @@ $collector->post(
 
         // TODO: Add content validation (text < 2000 chars etc.)
 
-        $tokenizer = new Tokenizer(ACCESS_SECRET);
-        ["valid" => $valid, "payload" => $payload] = $tokenizer->decodeToken(Request::accessToken());
-        if (!$valid) return unauthorized("Invalid token");
-
-        $user_bean = R::findOne("user", "username LIKE :username", [ ":username" => $payload->username ]);
+        $token = AccessToken::get();
+        $user_bean = R::findOne("user", "id LIKE ?", [ $token->getUserID() ]);
         if ($user_bean === null) return error("User not found");
 
         $post_bean = R::dispense("post");
@@ -35,6 +32,7 @@ $collector->post(
                     "post" => "/post/{$post_bean->id}/",
                 ]
             ]);
-    }
+    },
+    [ "before" => "auth" ]
 );
 
