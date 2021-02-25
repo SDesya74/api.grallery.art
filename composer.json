@@ -5,15 +5,16 @@
   "license": "proprietary",
   "authors": [
     {
-      "name": "Dilonexus",
-      "email": "email@example.com"
+      "name": "SDesya74",
+      "email": "sdesya74@gmail.com"
     }
   ],
   "require": {
     "phroute/phroute": "v1.4.4",
+    "ezyang/htmlpurifier": "v4.13.0",
     "ext-json": "*",
-    "ext-apache": "*",
     "ext-zlib": "*",
-    "ext-curl": "*"
+    "ext-curl": "*",
+    "ext-openssl": "*"
   }
 }
