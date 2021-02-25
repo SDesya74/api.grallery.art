@@ -1,6 +1,5 @@
 <?php
 require_once "util/responses.php";
-require_once "util/Tokenizer.php";
 require_once "util/Request.php";
 
 if (!isset($collector)) return;
@@ -11,12 +10,10 @@ $collector->post(
         $json = Request::getJsonFields("username", "email", "password", "captcha");
         if (!$json->valid) return error($json->errors);
 
-        $payload = $json->payload;
-        [ "username" => $username, "email" => $email, "password" => $password, "captcha" => $captcha ] = $payload;
+        [ "username" => $username, "email" => $email, "password" => $password, "captcha" => $captcha ] = $json->payload;
 
         // validate captcha
-        $secret = CAPTCHA_SECRET;
-        $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$secret&response=$captcha");
+        $response = file_get_contents(sprintf(CAPTCHA_URL, CAPTCHA_SECRET, $captcha));
         if ($response === false) return error("Can't check CAPTCHA");
 
         $response = json_decode($response, true);
@@ -48,20 +45,16 @@ $collector->post(
         }
 
         // if login is registered - throw error
-        if (R::findOne("user", "username LIKE ? or email LIKE ?", [ $username, $email ]) != null) {
+        if (Model_User::findOneBy("username LIKE ? or email LIKE ?", [ $username, $email ]) != null) {
             return error("User with this username or email is already registered");
         }
-
 
         // add user to database
         $user_bean = R::dispense("user");
         $user_bean->register($username, $email, $password);
-
         R::store($user_bean); // invalidate ID
 
-        $session = $user_bean->createSession();
-
-        // save user in database
+        $session = Model_Session::createForUser($user_bean);
         R::store($user_bean);
 
         return ok($session, hateoas("user", "/user/$username"));
