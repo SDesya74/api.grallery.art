@@ -1,5 +1,7 @@
 <?php
 
+use JetBrains\PhpStorm\Pure;
+
 class RefreshTokenPayload {
     private string $userID;
 
@@ -14,7 +16,7 @@ class RefreshTokenPayload {
         return new RefreshTokenPayload($userID);
     }
 
-    public function toArray(): array {
+    #[Pure] public function toArray(): array {
         return [ $this->getUserID() ];
     }
 
@@ -24,13 +26,19 @@ class RefreshTokenPayload {
 }
 
 class RefreshToken {
+    /**
+     * @throws Exception
+     */
     public static function create(string $userID): ArrayObject {
         $payload = new RefreshTokenPayload($userID);
 
         $tokenizer = new BinaryTokenizer(REFRESH_SECRET);
-        return $tokenizer->encode($payload->toArray(), ACCESS_TOKEN_LIFETIME);
+        return $tokenizer->encode($payload->toArray(), REFRESH_TOKEN_LIFETIME);
     }
 
+    /**
+     * @throws Exception
+     */
     public static function decode(string $token): RefreshTokenPayload {
         $tokenizer = new BinaryTokenizer(REFRESH_SECRET);
         $decoded = $tokenizer->decode($token);
