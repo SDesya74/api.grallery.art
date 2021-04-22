@@ -98,5 +98,9 @@ try {
     send_response(
         response(500, [ "message" => "Bad route" ])
     );
+} catch (Exception $exception) {
+    var_dump($exception);
 }
 // endregion
+
+R::close();
