@@ -16,14 +16,15 @@ class AccessToken {
         return self::$payload !== null;
     }
 
+    /**
+     * @throws Exception
+     */
     static function parseRequest() {
         if (isset(Request::args()->access_token)) $token = Request::args()->access_token;
 
         if (empty($token)) {
             $header = Request::header("Authorization");
-            if ($header === null) return;
-
-            $token = explode(" ", $header)[1];
+            if ($header !== null) $token = explode(" ", $header)[1];
         }
 
         if (empty($token)) throw new Exception("Token not found");

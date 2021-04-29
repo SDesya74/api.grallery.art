@@ -13,6 +13,9 @@ class BinaryTokenizer {
         if (!defined("OPEN_SSL_IV")) define("OPEN_SSL_IV", str_repeat("0", self::$encrypt_length));
     }
 
+    /**
+     * @throws Exception
+     */
     public function encode(array $data, string $ttl = null): ArrayObject {
         $data = [ $data ];
         if ($ttl !== null) {
@@ -33,6 +36,9 @@ class BinaryTokenizer {
         return new ArrayObject($result, ArrayObject::ARRAY_AS_PROPS);
     }
 
+    /**
+     * @throws Exception
+     */
     public function decode(string $token): array {
         $remainder = strlen($token) % 3;
         if ($remainder) $token .= str_repeat("=", 3 - $remainder);
@@ -42,9 +48,7 @@ class BinaryTokenizer {
         $right = substr($token, self::$hash_length);
 
         $hash = hash_hmac(self::$hash_algo, $right, $this->secret, true);
-        if ($left !== $hash) {
-            throw new Exception("Token verification failed");
-        }
+        if ($left !== $hash) throw new Exception("Token verification failed");
 
         $right = openssl_decrypt($right, self::$encrypt_algo, $this->secret, 0, OPEN_SSL_IV);
         $payload = unserialize($right);

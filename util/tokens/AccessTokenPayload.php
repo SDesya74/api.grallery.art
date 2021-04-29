@@ -1,5 +1,7 @@
 <?php
 
+use JetBrains\PhpStorm\Pure;
+
 require_once "AccessRights.php";
 
 class AccessTokenPayload {
@@ -19,7 +21,7 @@ class AccessTokenPayload {
         return new AccessTokenPayload($userID, $rights);
     }
 
-    public function toArray(): array {
+    #[Pure] public function toArray(): array {
         return [ $this->getUserID(), $this->rights->get() ];
     }
 
