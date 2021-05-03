@@ -35,6 +35,7 @@ class Request {
 
     static function json(): ArrayObject {
         $input = file_get_contents("php://input");
+
         return new ArrayObject(
             $input ? json_decode($input) : [],
             ArrayObject::ARRAY_AS_PROPS
@@ -65,7 +66,7 @@ class Request {
 
     static function page(): array {
         $args = self::args();
-        return isset($args->page) ? [ $args->page->limit, $args->page->offset ] : [ 25, 0 ];
+        return isset($args->page) ? [ $args->page->offset, $args->page->limit ] : [ 0, 25 ];
     }
 
     static function header($name) {
