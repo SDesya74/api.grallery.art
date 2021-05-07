@@ -29,7 +29,7 @@ class UUIDWriterMySQL extends MySQL implements QueryWriter {
     public function updateRecord($table, $updateValues, $id = null): string {
         $flagNeedsReturnID = (!$id);
 
-        do $uid = $this->generateUid(UUID_LENGTH);
+        do $uid = $this->generateUid();
         while (R::count($table, "id = ?", [ $uid ]) > 0);
 
         if ($flagNeedsReturnID) R::exec("SET @uuid = ?;", [ $uid ]);
@@ -38,11 +38,11 @@ class UUIDWriterMySQL extends MySQL implements QueryWriter {
         return $id;
     }
 
-    private function generateUid(int $length): string {
-        $uid = '';
-        $chars_length = strlen(UUID_ALPHABET) - 1;
-        while ($length-- > 0) $uid .= UUID_ALPHABET[random_int(0, $chars_length)];
-        return $uid;
+    /**
+     * @throws Exception
+     */
+    private function generateUid(): string {
+        return uid();
     }
 
     public function getTypeForID(): string {
