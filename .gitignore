@@ -1,5 +1,6 @@
 .idea
 vendor
 variables
+lib
 
 composer.lock
