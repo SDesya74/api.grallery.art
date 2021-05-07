@@ -11,12 +11,19 @@
 // 405 - method not allowed
 // 429 - too many requests
 
+use JetBrains\PhpStorm\ArrayShape;
+use JetBrains\PhpStorm\Pure;
+
 function ok($payload = null, $meta = []): array {
     return response($payload === null && $meta == [] ? 204 : 200, $payload, $meta);
 }
 
 function created($message = "Created", $meta = []): array {
     return response(201, [ "message" => $message ], $meta);
+}
+
+function not_found($message = "Not Found"): array {
+    return response(404, [ "message" => $message ]);
 }
 
 function error(/*$code, */ $message/*, $description*/): array {
@@ -35,18 +42,16 @@ function too_many_requests($message = "Too Many Requests"): array {
     return response(429, [ "message" => $message ]);
 }
 
+#[Pure]
+#[ArrayShape([ "type" => "string", "name" => "", "link" => "string" ])]
 function hateoas($name, $link, $params = []): array {
-    $params = empty($params) ? [] : [ "query" => http_build_query($params) ];
+    $parsed = parse_url($link);
+    if(!empty($params)) $parsed["query"] = http_build_query($params);
+
     return [
         "type" => "link",
         "name" => $name,
-        "link" => urldecode(
-            http_build_url(
-                $link,
-                $params,
-                HTTP_URL_STRIP_AUTH | HTTP_URL_JOIN_PATH | HTTP_URL_JOIN_QUERY | HTTP_URL_STRIP_FRAGMENT
-            )
-        )
+        "link" => urldecode(build_url($parsed))
     ];
 }
 
@@ -72,7 +77,7 @@ function response($code, $data, $meta = []): array {
 
     $meta = [ $meta ];
     while (!empty($meta) && array_filter($meta,
-            function($e) {
+            function ($e) {
                 return is_array($e) && empty($e["type"]);
             }) === $meta) {
         $meta = array_merge(...$meta);
