@@ -1,12 +1,9 @@
 <?php
 require_once "util/Request.php";
-require_once "util/http_build_url.php";
-
-if (!isset($collector)) return;
 
 $collector->post(
     "/post",
-    function() {
+    function () {
         $json = Request::getJsonFields("content");
         if (!$json->valid) return error($json->errors);
         $content = $json->payload->content;

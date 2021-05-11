@@ -1,7 +1,5 @@
 <?php
 
-assert(isset($collector));
-
 $collector->filter(
     "auth",
     function() {

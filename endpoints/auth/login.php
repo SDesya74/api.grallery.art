@@ -3,11 +3,9 @@ require_once "util/responses.php";
 require_once "util/Request.php";
 require_once "models/Model_User.php";
 
-if (!isset($collector)) return;
-
 $collector->post(
     "/login",
-    function() {
+    function () {
         $json = Request::getJsonFields("login", "password");
         if (!$json->valid) return error($json->errors);
 

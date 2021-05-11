@@ -1,12 +1,9 @@
 <?php
 require_once "util/Request.php";
-require_once "util/http_build_url.php";
-
-if (!isset($collector)) return;
 
 $collector->get(
     "/post/{id:i}",
-    function($id) {
+    function ($id) {
         $post_bean = R::findOne("post", "id = ?", [ $id ]);
         if ($post_bean == null) return error("Post not found");
 

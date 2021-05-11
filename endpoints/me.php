@@ -1,12 +1,9 @@
 <?php
 require_once "util/Request.php";
 
-if (!isset($collector)) return;
-
-
 $collector->get(
     "/me",
-    function() {
+    function () {
         $token = AccessToken::get();
 
         $user_bean = Model_User::byID($token->getUserID());

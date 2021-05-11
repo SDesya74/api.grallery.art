@@ -2,11 +2,9 @@
 require_once "util/responses.php";
 require_once "util/Request.php";
 
-if (!isset($collector)) return;
-
 $collector->get(
     "/available/email",
-    function() {
+    function () {
         $args = Request::args();
         if (!isset($args->email)) return error("Missing email field");
         $email = $args->email;

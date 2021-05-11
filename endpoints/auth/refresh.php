@@ -3,11 +3,9 @@ require_once "util/responses.php";
 require_once "util/Request.php";
 require_once "variables/token.php";
 
-if (!isset($collector)) return;
-
 $collector->post(
     "/refresh",
-    function() {
+    function () {
         $json = Request::getJsonFields("refresh_token");
         if (!$json->valid) return error($json->errors);
 

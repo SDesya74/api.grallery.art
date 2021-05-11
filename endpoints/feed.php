@@ -1,12 +1,9 @@
 <?php
 require_once "util/Request.php";
-require_once "util/http_build_url.php";
-
-if (!isset($collector)) return;
 
 $collector->get(
     "/feed",
-    function() {
+    function () {
         $token = AccessToken::get();
         $user_bean = R::findOne("user", "id = ?", [ $token->getUserID() ]);
         if ($user_bean === null) return error("User not found");

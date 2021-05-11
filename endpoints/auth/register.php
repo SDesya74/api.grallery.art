@@ -2,8 +2,6 @@
 require_once "util/responses.php";
 require_once "util/Request.php";
 
-if (!isset($collector)) return;
-
 $collector->post(
     "/register",
     function() {

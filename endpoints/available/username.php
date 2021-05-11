@@ -2,11 +2,9 @@
 require_once "util/responses.php";
 require_once "util/Request.php";
 
-if (!isset($collector)) return;
-
 $collector->get(
     "/available/username",
-    function() {
+    function () {
         $args = Request::args();
         if (!isset($args->username)) return error("Missing username field");
         $username = $args->username;
