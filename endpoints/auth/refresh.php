@@ -25,7 +25,7 @@ $collector->post(
 
         $user = $user->fresh();
 
-        $new_session = Model_Session::createForUser($user);
+        $new_session = Model_Session::createForUser($user->box());
         R::store($user);
 
         return ok($new_session, hateoas("user", "/user/$user->username"));

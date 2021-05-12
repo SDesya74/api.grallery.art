@@ -4,10 +4,9 @@ use JetBrains\PhpStorm\ArrayShape;
 use RedBeanPHP\OODBBean;
 
 class Model_Session extends RedBean_SimpleModel {
-    #[ArrayShape([ "access" => "\ArrayObject", "refresh" => "\ArrayObject" ])]
-    public static function createForUser(
-        OODBBean $user
-    ): array {
+    #[ArrayShape([ "access" => "\ArrayObject", "refresh" => "\ArrayObject", "server_time" => "integer" ])]
+    public static function createForUser(Model_User $user): array {
+        $user = $user->unbox();
         $access = AccessToken::create($user->getID(), new AccessRights());
         $refresh = RefreshToken::create($user->getID());
 

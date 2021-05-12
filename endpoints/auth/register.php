@@ -52,8 +52,8 @@ $collector->post(
         $user_bean->register($username, $email, $password);
         R::store($user_bean); // invalidate ID
 
-        $session = Model_Session::createForUser($user_bean);
-        R::store($user_bean);
+        $session = Model_Session::createForUser($user->box());
+        R::store($user);
 
         return ok($session, hateoas("user", "/user/$username"));
     }

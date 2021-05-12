@@ -21,7 +21,7 @@ $collector->post(
         // verify password
         if (!$user_bean->verifyPassword($json->payload->password)) return error("Incorrect password");
 
-        $session = Model_Session::createForUser($user_bean);
+        $session = Model_Session::createForUser($user_bean->box());
         R::store($user_bean);
 
         return ok($session, hateoas("user", "/user/$user_bean->username"));
