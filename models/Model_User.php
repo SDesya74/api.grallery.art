@@ -1,5 +1,6 @@
 <?php
 
+use PHPMailer\PHPMailer\PHPMailer;
 use RedBeanPHP\OODBBean;
 
 class Model_User extends RedBean_SimpleModel {
@@ -18,17 +19,15 @@ class Model_User extends RedBean_SimpleModel {
     public function register(string $username, string $visible_name, string $email, string $password) {
         $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-        $bean->username = $username;
-        $bean->nickname = $nickname;
-        $bean->email = $email;
-        $bean->password_hash = $password_hash;
-        $email_hash = md5(strtolower(trim($email)));
-        $bean->avatar = "https://www.gravatar.com/avatar/$email_hash?d=mp";
-        $bean->created = time();
-        $bean->last_enter = time();
-        $bean->active = false;
-
-        $bean->ownPostList = [];
+        $this->username = $username;
+        $this->visible_name = $visible_name;
+        $this->email = $email;
+        $this->confirmed = false;
+        $this->password_hash = $password_hash;
+        $this->avatar = "https://www.gravatar.com/avatar/" . md5(strtolower(trim($email))) . "?d=mp";
+        // TODO: Create random avatar generator or just select random avatar image for new user
+        $this->created = time();
+        $this->last_enter = time();
     }
 
     public function verifyPassword($password): bool {
