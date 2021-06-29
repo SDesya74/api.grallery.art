@@ -15,11 +15,8 @@ class Model_User extends RedBean_SimpleModel {
         return self::findOneBy("username LIKE :login or email LIKE :login", [ ":login" => $login ]);
     }
 
-    public function register(string $username, string $email, string $password) {
+    public function register(string $username, string $visible_name, string $email, string $password) {
         $password_hash = password_hash($password, PASSWORD_DEFAULT);
-        $nickname = $username;
-
-        $bean = $this->bean;
 
         $bean->username = $username;
         $bean->nickname = $nickname;
@@ -35,25 +32,88 @@ class Model_User extends RedBean_SimpleModel {
     }
 
     public function verifyPassword($password): bool {
-        return password_verify($password, $this->bean->password_hash);
+        return password_verify($password, $this->password_hash);
     }
 
-    public function sendConfirmationEmail() {
+    public function sendConfirmationEmail(): array {
+        if ($this->confirmed) return error("User is already confirmed");
+
+        $confirmation = R::findOrCreate("confirmation", [ "user_id" => $this->id ]);
+        $confirmation->created = time();
+        $confirmation->user = $this->bean;
+        R::store($confirmation);
+
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->CharSet = "UTF-8";
+            $mail->Host = "mail.hosting.reg.ru";
+            $mail->SMTPAuth = true;
+            $mail->Username = "noreply@grallery.art";
+            $mail->Password = "mP6oQ0zP3wcY3y";
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = 587;
+
+            //Recipients
+            $mail->setFrom("noreply@grallery.art", "Ratat.art");
+            $mail->addAddress($this->email, $this->visible_name);
+
+            //Content
+            $mail->isHTML(true);
+            $mail->Subject = "Confirm your E-mail";
+            $context = [
+                "visible_name" => $this->visible_name,
+                "link" => "{$_SERVER["HTTP_ORIGIN"]}/verify/$confirmation->id"
+            ];
+
+            $content = file_get_contents("confirmation/email-template.html");
+            $content = preg_replace_callback(
+                "/{{\s*([a-zA-Z_][a-zA-Z\d+_]*)\s*}}\s*/",
+                function ($matches) use ($context) {
+                    return $context[$matches[1]];
+                },
+                $content
+            );
+            $mail->Body = $content;
+
+            $mail->send();
+
+            $index = strpos($this->email, "@") + 1;
+            $domain = substr($this->email, $index);
+
+            $mail = R::findOne("emailservice", " domain LIKE ? ", [ $domain ]);
+            if($mail !== null) return ok([ "name" => $mail->name, "url" => $mail->url ]);
+            return ok();
+        } catch (Exception $e) {
+            return error("Message could not be sent. Mailer Error: { $mail->ErrorInfo }");
+        }
     }
 
     public function getLink(): string {
-        return "/user/{$this->bean->username}";
+        return "/user/{$this->username}";
     }
 
     public function getFields(array $fields = []): object {
-        return FieldFilter::filter($this->bean, $fields, [ "password_hash" ]);
+        return FieldFilter::filter($this, $fields, [ "password_hash" ]);
     }
 
     public function addPost(string $content) {
-        $post_bean = R::dispense("post");
-        $post_bean->content = json_encode($content);
-        $post_bean->created = time();
+        $post = R::dispense("post");
+        $post->content = json_encode($content);
+        $post->created = time();
 
-        $this->bean->ownPostList[] = $post_bean;
+        $this->ownPostList[] = $post;
+    }
+
+    public function __jsonSerialize() {
+        return [
+            "id" => $this->id,
+            "username" => $this->username,
+            "visible_name" => $this->visible_name,
+            "avatar" => $this->avatar,
+            "created" => $this->created,
+            "confirmed" => !!$this->confirmed,
+            "last_enter" => $this->last_enter
+        ];
     }
 }
