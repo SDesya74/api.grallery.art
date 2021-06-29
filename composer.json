@@ -15,6 +15,11 @@
     "ext-json": "*",
     "ext-zlib": "*",
     "ext-curl": "*",
-    "ext-openssl": "*"
+    "ext-openssl": "*",
+    "phpcurl/curlwrapper": "v3.0.0",
+    "phpmailer/phpmailer": "^6.2",
+    "ext-http": "*",
+    "ext-gmp": "*",
+    "ext-bcmath": "*"
   }
 }
